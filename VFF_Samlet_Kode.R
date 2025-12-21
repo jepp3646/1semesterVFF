@@ -1,6 +1,22 @@
+# Liste over alle pakker
+packages <- c(
+  "tidyverse", "palmerpenguins", "ggthemes", "ggridges", "nycflights13",
+  "Lahman", "janitor", "vroom", "arrow", "readxl", "writexl", "googlesheets4",
+  "RSQLite", "babynames", "stringi", "hms", "tidymodels", "fable", "car", "MASS",
+  "lmtest", "tseries", "ggfortify", "polite", "tufte", "rvest", "xml2", "dplyr","stringr","DBI"
+)
 
+library(tidyverse)
+library(rvest)
+library(httr)
+library(dplyr)
+library(stringr)
+library(DBI)
+library(RSQLite)
+
+# ----------------------------------------------------
 # WEB SCRAPING AF SUPERSTATS OG JOIN AF ANDRE TABELLER
-
+# ----------------------------------------------------
 
 # Vi angiver URL til Superstats (bruges kun som udgangspunkt)
 html <- "https://superstats.dk/hold/sason?id=11&vis=hjemme&aar=2025%2F2026"
@@ -143,6 +159,8 @@ st_webscrabe_join <- st_webscrabe %>%
 # JOIN MED VEJRDATA
 # -----------------------------
 
+view(vff_hjemmekampe_med_vejr)
+
 # Konverterer dato til Date-klasse
 vff_hjemmekampe_med_vejr$dato_index <- as.Date(
   vff_hjemmekampe_med_vejr$dato_index,
@@ -157,6 +175,29 @@ st_webscrabe_joined <- st_webscrabe_join %>%
   )
 
 # Vis resultat
-view(st_webscrabe_joined)
+view(st_webscrabe)
 
+# -----------------------------
+# Forbind til SQLite Database
+# -----------------------------
+
+con <- dbConnect(
+  SQLite(),
+  dbname = "VffDataBaseNew.db"
+)
+
+dbListTables(con)
+
+
+# Load vores tabeller ind:
+
+dbWriteTable(con, "st_webscrabe", st_webscrabe, overwrite = TRUE)
+dbWriteTable(con, "vffkort01", vffkort01, overwrite = TRUE)
+dbWriteTable(con, "vff_hjemmekampe_med_vejr", vff_hjemmekampe_med_vejr, overwrite = TRUE)
+
+vffkort01 <- readRDS("vffkort01.rds")
+fcidk <- readRDS("fcidk.rds")
+
+dbWriteTable(con, "vffkort01", vffkort01, overwrite = TRUE)
+dbWriteTable(con, "fcidk", fcidk, overwrite = TRUE)
 
