@@ -38,6 +38,7 @@ on.exit(DBI::dbDisconnect(con), add = TRUE)
 # -----------------------------
 
 # Load vores tabeller ind (fra .rds-filer)
+st_webscrabe <- readRDS("st_webscrabe.rds")
 vffkort01 <- readRDS("vffkort01.rds")
 fcidk <- readRDS("fcidk.rds")
 vff_hjemmekampe_med_vejr <- readRDS("vff_hjemmekampe_med_vejr.rds")
@@ -48,12 +49,9 @@ dbWriteTable(con, "vffkort01", vffkort01, overwrite = TRUE)
 dbWriteTable(con, "vff_hjemmekampe_med_vejr", vff_hjemmekampe_med_vejr, overwrite = TRUE)
 dbWriteTable(con, "fcidk", fcidk, overwrite = TRUE)
 
-# Kig på vejr-tabellen i R (for at validere data ser fornuftige ud)
-View(vff_hjemmekampe_med_vejr)
-
 
 # -----------------------------
-# Join Tabeller (kontrol-joins)
+# Join Tabeller 
 # -----------------------------
 
 # Join st_webscrabe og DMI tabel (vff_hjemmekampe_med_vejr)
@@ -68,9 +66,6 @@ INNER JOIN vff_hjemmekampe_med_vejr d
   ON strftime('%d/%m/%Y', date('1970-01-01', printf('+%d days', s.Dato))) = d.dato_index
 ORDER BY s.Dato DESC;
 ")
-
-# Tjek joinet i R
-View(joined_st_webscrabe_dmi)
 
 # (Debug / sanity checks) – viser et par datoer i hver tabel
 DBI::dbGetQuery(con, "SELECT Dato FROM st_webscrabe ORDER BY Dato DESC LIMIT 10;")
@@ -99,8 +94,6 @@ joined_st_webscrabe_fcidk <- dbGetQuery(con, "
       ON s.Modstander = f.kort
 ")
 
-View(joined_st_webscrabe_fcidk)
-
 # Se hvilke tabeller der er i databasen (kontrol)
 dbListTables(con)
 
@@ -115,8 +108,6 @@ LEFT JOIN vffkort01
   ON st_webscrabe.Season = vffkort01.sæson
  AND st_webscrabe.Rnd    = vffkort01.runde
 ")
-
-View(joined_st_webscrabe_vfkort01)
 
 
 # -----------------------------
@@ -149,7 +140,6 @@ DBI::dbListTables(con)
 
 # Læs tabellen ind i R og kig på den
 model_dataset <- DBI::dbReadTable(con, "model_dataset")
-View(model_dataset)
 names(model_dataset)
 
 # Kontrol: hvilke felter findes i vejr-tabellen (hvis du vil tjekke at de er med i join)
@@ -208,13 +198,6 @@ if ("x7" %in% names(df)) {
 dplyr::glimpse(df)
 
 
-# -----------------------------
-# Gem datasættet (så du kan uploade det her)
-# -----------------------------
-
-# Gem som RDS (bevarer datatyper som Date/factor)
+# Vi gemmer datasættetet 
 saveRDS(df, "df_model_ready.rds")
-
-# Gem som CSV (nem at dele, men Date/factor bliver til tekst)
-readr::write_csv(df, "df_model_ready.csv")
 
