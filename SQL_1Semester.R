@@ -201,3 +201,234 @@ dplyr::glimpse(df)
 # Vi gemmer datasættetet 
 saveRDS(df, "df_model_ready.rds")
 
+
+df <- df %>%
+  mutate(
+    # Hvilken ugedag spilles kampen?
+    weekday = wday(dato, label = TRUE),
+    
+    # Er det weekend?
+    is_weekend = weekday %in% c("Sat", "Sun"),
+    
+    # Måneden (sæson-effekt)
+    month = month(dato),
+    
+    # Mål-forskel (kampens sportslige betydning)
+    maal_diff = vff_mal - modstander_mal
+  )
+
+#Nu laver vi fire forskellige splits, da vi skal lave modeller for hhv. 3d,7d,10d og 2 måneder
+
+#2 Måneder før - Dataframe: Vi laver et dataframe, hvor udvalgte variabler er med. De er udvalgt udfra hvoad der giver mening, at vi ved 2 måneder før. 
+df_2m <- df %>%
+  select(
+    tilskuere,                 # TARGET (det vi forudsiger)
+    season,
+    modstander,
+    kategori,
+    mean_tilskuere,
+    mean_tilskuere_saeson,
+    weekday,
+    is_weekend,
+    is_holiday,
+  ) %>%
+  drop_na() #Bruger kun rækker, hvor der ikke er missing value (NA)
+
+
+#10 dage før - Dataframe: 
+df_10d <- df %>%
+  select(
+    tilskuere,
+    season,
+    rnd,
+    modstander,
+    kategori,
+    mean_tilskuere,
+    mean_tilskuere_saeson,
+    weekday,
+    is_weekend,
+    is_holiday,
+    kamp_tid,
+    kickoff_hour,
+    d10_tilskuere
+  ) %>%
+  drop_na()
+
+#7 dage før - Dataframe:
+df_7d <- df %>%
+  select(
+    tilskuere,
+    season,
+    rnd,
+    modstander,
+    kategori,
+    mean_tilskuere,
+    mean_tilskuere_saeson,
+    weekday,
+    is_weekend,
+    is_holiday,
+    kamp_tid,
+    kickoff_hour,
+    regn_dag_kat,
+    temp_kamp_kat,
+    vind_1h_kat,
+    d10_tilskuere,
+    d7_tilskuere
+  ) %>%
+  drop_na()
+
+#3 dage før - Dataframe:
+df_3d <- df %>%
+  select(
+    tilskuere,
+    season,
+    rnd,
+    modstander,
+    kategori,
+    mean_tilskuere,
+    mean_tilskuere_saeson,
+    weekday,
+    is_weekend,
+    is_holiday,
+    kamp_tid,
+    kickoff_hour,
+    temp_kamp,
+    regn_dag,
+    vind_1h,
+    d10_tilskuere,
+    d7_tilskuere,
+    d3_tilskuere
+  ) %>%
+  drop_na()
+
+# ----------------------------
+# Modellering - 2 Måneder før
+# ----------------------------
+
+# Definerer x variabler og y variabel
+y_2m <- df_2m$tilskuere
+x_2m <- model.matrix(tilskuere ~ ., df_2m)[, -1]
+
+# Nu laver vi et træningsdataset og et testdataset
+set.seed(123)
+
+train_idx_2m <- sample(1:nrow(x_2m), nrow(x_2m) * 0.8)
+test_idx_2m  <- setdiff(1:nrow(x_2m), train_idx_2m)
+
+x_train_2m <- x_2m[train_idx_2m, ]
+x_test_2m  <- x_2m[test_idx_2m, ]
+
+y_train_2m <- y_2m[train_idx_2m]
+y_test_2m  <- y_2m[test_idx_2m]
+
+#Nu kan vi bruge lineær regressions model til at finde y
+
+lm_2m_simple <- lm(
+  tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
+    weekday + is_weekend + is_holiday +
+    kategori + modstander,
+  data = df_2m[train_idx_2m, ]
+)
+
+summary(lm_2m_simple)
+
+
+# ----------------------------
+# Modellering - 10 dage før
+# ----------------------------
+
+# Definerer x variabler og y variabel
+y_10d <- df_10d$tilskuere
+x_10d <- model.matrix(tilskuere ~ ., df_10d)[, -1]
+
+# Nu laver vi et træningsdataset og et testdataset
+set.seed(123)
+
+train_idx_10d <- sample(1:nrow(x_10d), nrow(x_10d) * 0.8)
+test_idx_10d  <- setdiff(1:nrow(x_10d), train_idx_10d)
+
+x_train_10d <- x_10d[train_idx_10d, ]
+x_test_10d  <- x_10d[test_idx_10d, ]
+
+y_train_10d <- y_10d[train_idx_10d]
+y_test_10d  <- y_10d[test_idx_10d]
+
+#Nu kan vi bruge lineær regressions model til at finde y
+lm_10d_simple <- lm(
+  tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
+    d10_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    kategori + modstander,
+  data = df_10d[train_idx_10d, ]
+)
+
+summary(lm_10d_simple)
+
+names(df)
+view(df)
+
+
+# ----------------------------
+# Modellering - 7 dage før
+# ----------------------------
+
+# Definerer x variabler og y variabel
+y <- df_7d$tilskuere
+x <- model.matrix(tilskuere ~ ., df_7d)[, -1]
+
+#Nu laver vi et træningsdataset og et testdataset
+
+set.seed(123)
+
+train_idx <- sample(1:nrow(x), nrow(x) * 0.8)
+test_idx  <- setdiff(1:nrow(x), train_idx)
+
+x_train <- x[train_idx, ]
+x_test  <- x[test_idx, ]
+
+y_train <- y[train_idx]
+y_test  <- y[test_idx]
+
+#Nu kan vi bruge lineær regressions model til at finde y
+
+lm_7d_simple <- lm(
+  tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
+    d7_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    kategori + modstander,
+  data = df_7d[train_idx, ]
+)
+
+summary(lm_7d_simple)
+
+"kickoff_hour" %in% names(df_7d)
+
+# ----------------------------
+# Modellering - 3 dage før
+# ----------------------------
+
+# Definerer x variabler og y variabel
+y_3d <- df_3d$tilskuere
+x_3d <- model.matrix(tilskuere ~ ., df_3d)[, -1]
+
+# Nu laver vi et træningsdataset og et testdataset
+set.seed(123)
+
+train_idx_3d <- sample(1:nrow(x_3d), nrow(x_3d) * 0.8)
+test_idx_3d  <- setdiff(1:nrow(x_3d), train_idx_3d)
+
+x_train_3d <- x_3d[train_idx_3d, ]
+x_test_3d  <- x_3d[test_idx_3d, ]
+
+y_train_3d <- y_3d[train_idx_3d]
+y_test_3d  <- y_3d[test_idx_3d]
+
+#Nu kan vi bruge lineær regressions model til at finde y
+
+lm_3d_simple <- lm(
+  tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
+    d3_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    kategori + modstander,
+  data = df_3d[train_idx_3d, ]
+)
+
+summary(lm_3d_simple)
+
