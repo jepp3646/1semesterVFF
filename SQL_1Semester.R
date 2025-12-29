@@ -301,9 +301,9 @@ df_3d <- df %>%
   ) %>%
   drop_na()
 
-# ----------------------------
-# Modellering - 2 Måneder før
-# ----------------------------
+# ---------------------------------------------
+# Modellering Lineær Regression - 2 måneder før
+# ---------------------------------------------
 
 # Definerer x variabler og y variabel
 y_2m <- df_2m$tilskuere
@@ -333,9 +333,9 @@ lm_2m_simple <- lm(
 summary(lm_2m_simple)
 
 
-# ----------------------------
-# Modellering - 10 dage før
-# ----------------------------
+# ------------------------------------------
+# Modellering Lineær Regression - 10 dage før
+# ------------------------------------------
 
 # Definerer x variabler og y variabel
 y_10d <- df_10d$tilskuere
@@ -367,9 +367,9 @@ names(df)
 view(df)
 
 
-# ----------------------------
-# Modellering - 7 dage før
-# ----------------------------
+# ------------------------------------------
+# Modellering Lineær Regression - 7 dage før
+# ------------------------------------------
 
 # Definerer x variabler og y variabel
 y <- df_7d$tilskuere
@@ -401,9 +401,9 @@ summary(lm_7d_simple)
 
 "kickoff_hour" %in% names(df_7d)
 
-# ----------------------------
-# Modellering - 3 dage før
-# ----------------------------
+# ------------------------------------------
+# Modellering Lineær Regression - 3 dage før
+# ------------------------------------------
 
 # Definerer x variabler og y variabel
 y_3d <- df_3d$tilskuere
@@ -431,4 +431,13 @@ lm_3d_simple <- lm(
 )
 
 summary(lm_3d_simple)
+
+# ---------------------------------
+# Modellering Lasso - 2 Måneder Før
+# ---------------------------------
+
+
+# -------------------------------
+# Modellering Lasso - 10 dage før
+# -------------------------------
 
