@@ -8,7 +8,7 @@ packages <- c(
   "Lahman", "janitor", "vroom", "arrow", "readxl", "writexl", "googlesheets4",
   "RSQLite", "babynames", "stringi", "hms", "tidymodels", "fable", "car", "MASS",
   "lmtest", "tseries", "ggfortify", "polite", "tufte", "rvest", "xml2",
-  "dplyr", "stringr", "DBI", "lubridate"
+  "dplyr", "stringr", "DBI", "lubridate","leaps"
 )
 
 # Indlæs pakker vi bruger i dette script
@@ -21,6 +21,7 @@ library(DBI)
 library(RSQLite)
 library(janitor)    # Bruges til at rense kolonnenavne (snake_case) og generel oprydning
 library(lubridate)  # Bruges til at arbejde med datoer/tid
+library(leaps)
 
 
 # Opret forbindelse til SQLite databasen (filen ligger i dit projekt-folder)
@@ -199,7 +200,7 @@ dplyr::glimpse(df)
 
 
 # Vi gemmer datasættetet 
-saveRDS(df, "df_model_ready.rds")
+# saveRDS(df, "df_model_ready.rds")
 
 
 df <- df %>%
@@ -229,7 +230,6 @@ df_2m <- df %>%
     mean_tilskuere,
     mean_tilskuere_saeson,
     weekday,
-    is_weekend,
     is_holiday,
   ) %>%
   drop_na() #Bruger kun rækker, hvor der ikke er missing value (NA)
@@ -246,7 +246,6 @@ df_10d <- df %>%
     mean_tilskuere,
     mean_tilskuere_saeson,
     weekday,
-    is_weekend,
     is_holiday,
     kamp_tid,
     kickoff_hour,
@@ -265,7 +264,6 @@ df_7d <- df %>%
     mean_tilskuere,
     mean_tilskuere_saeson,
     weekday,
-    is_weekend,
     is_holiday,
     kamp_tid,
     kickoff_hour,
@@ -288,7 +286,6 @@ df_3d <- df %>%
     mean_tilskuere,
     mean_tilskuere_saeson,
     weekday,
-    is_weekend,
     is_holiday,
     kamp_tid,
     kickoff_hour,
@@ -325,7 +322,7 @@ y_test_2m  <- y_2m[test_idx_2m]
 
 lm_2m_simple <- lm(
   tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
-    weekday + is_weekend + is_holiday +
+    weekday + is_holiday +
     kategori + modstander,
   data = df_2m[train_idx_2m, ]
 )
@@ -356,15 +353,15 @@ y_test_10d  <- y_10d[test_idx_10d]
 #Nu kan vi bruge lineær regressions model til at finde y
 lm_10d_simple <- lm(
   tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
-    d10_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    d10_tilskuere + weekday + is_holiday + kickoff_hour +
     kategori + modstander,
   data = df_10d[train_idx_10d, ]
 )
 
 summary(lm_10d_simple)
 
-names(df)
-view(df)
+# names(df)
+#view(df)
 
 
 # ------------------------------------------
@@ -392,7 +389,7 @@ y_test  <- y[test_idx]
 
 lm_7d_simple <- lm(
   tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
-    d7_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    d7_tilskuere + weekday + is_holiday + kickoff_hour +
     kategori + modstander,
   data = df_7d[train_idx, ]
 )
@@ -425,12 +422,14 @@ y_test_3d  <- y_3d[test_idx_3d]
 
 lm_3d_simple <- lm(
   tilskuere ~ mean_tilskuere + mean_tilskuere_saeson +
-    d3_tilskuere + weekday + is_weekend + is_holiday + kickoff_hour +
+    d3_tilskuere + weekday + is_holiday + kickoff_hour +
     kategori + modstander,
   data = df_3d[train_idx_3d, ]
 )
 
 summary(lm_3d_simple)
+
+lm_3d_simple
 
 # ---------------------------------
 # Modellering Lasso - 2 Måneder Før
@@ -438,14 +437,14 @@ summary(lm_3d_simple)
 library(glmnet)
 set.seed(1)
 
-# samme grid som sidste års eksamen
+# samme grid som sidste års eksamen #Tror jeg ikke vi skal skrive XD)
 grid <- 10^seq(10, -2, length.out = 100)
 
 # X og y
 x_2m <- model.matrix(tilskuere ~ ., df_2m)[, -1]
 y_2m <- df_2m$tilskuere
 
-# train/test split (2/3 - 1/3)
+# train/test split (2/3 - 1/3) #Forkert split - skal være 80/20
 train_2m <- sample(1:nrow(x_2m), nrow(x_2m) * 2/3)
 test_2m  <- (-train_2m)
 y_test_2m <- y_2m[test_2m]
@@ -557,7 +556,7 @@ coef_lasso_10d[coef_lasso_10d[,1] != 0, , drop = FALSE]
 # -------------------------------------------------------
 
 library(glmnet)
-set.seed(1)
+set.seed(1)#Sæt gruppenummers seed i stedet
 
 # Lambda-grid
 grid <- 10^seq(10, -2, length.out = 100)
@@ -614,6 +613,7 @@ rmse_lasso_test_7d
 # (Valgfrit) Hvilke variabler vælger Lasso?
 coef_lasso_7d <- coef(lasso_cv_7d, s = "lambda.min")
 coef_lasso_7d[coef_lasso_7d[,1] != 0, , drop = FALSE]
+
 #7 dage før kamp får flere kortsigtede kampvariabler betydning for billetsalget."
 
 # -------------------------------------------------------
@@ -679,3 +679,430 @@ rmse_lasso_test_3d
 coef_lasso_3d <- coef(lasso_cv_3d, s = "lambda.min")
 coef_lasso_3d[coef_lasso_3d[,1] != 0, , drop = FALSE]
 #3 dage før kamp dominerer kortsigtede faktorer som nyligt billetsalg, ugedag og vejr.
+
+
+# -------------------------------
+# Ridge - fælles opsætning
+# -------------------------------
+
+library(glmnet)
+set.seed(1)
+
+grid <- 10^seq(10, -2, length.out = 100)
+
+# ---------------------------------
+# Modellering Ridge - 2 Måneder Før
+# ---------------------------------
+
+x_2m <- model.matrix(tilskuere ~ ., df_2m)[, -1]
+y_2m <- df_2m$tilskuere
+
+train_2m <- sample(1:nrow(x_2m), size = floor(0.8 * nrow(x_2m)))
+test_2m  <- setdiff(1:nrow(x_2m), train_2m)
+y_test_2m <- y_2m[test_2m]
+
+ridge_2m <- glmnet(
+  x_2m[train_2m, ],
+  y_2m[train_2m],
+  alpha = 0,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+ridge_cv_2m <- cv.glmnet(
+  x_2m[train_2m, ],
+  y_2m[train_2m],
+  alpha = 0,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_ridge_2m <- ridge_cv_2m$lambda.min
+
+rmse_ridge_cv_2m <- sqrt(
+  ridge_cv_2m$cvm[ridge_cv_2m$lambda == bestlam_ridge_2m]
+)
+
+pred_ridge_2m <- predict(ridge_2m, s = bestlam_ridge_2m, newx = x_2m[test_2m, ])
+rmse_ridge_test_2m <- sqrt(mean((pred_ridge_2m - y_test_2m)^2))
+
+bestlam_ridge_2m
+rmse_ridge_cv_2m
+rmse_ridge_test_2m
+
+# -------------------------------
+# Modellering Ridge - 10 dage før
+# -------------------------------
+
+x_10d <- model.matrix(tilskuere ~ ., df_10d)[, -1]
+y_10d <- df_10d$tilskuere
+
+train_10d <- sample(1:nrow(x_10d), size = floor(0.8 * nrow(x_10d)))
+test_10d  <- setdiff(1:nrow(x_10d), train_10d)
+y_test_10d <- y_10d[test_10d]
+
+ridge_10d <- glmnet(
+  x_10d[train_10d, ],
+  y_10d[train_10d],
+  alpha = 0,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+ridge_cv_10d <- cv.glmnet(
+  x_10d[train_10d, ],
+  y_10d[train_10d],
+  alpha = 0,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_ridge_10d <- ridge_cv_10d$lambda.min
+
+rmse_ridge_cv_10d <- sqrt(
+  ridge_cv_10d$cvm[ridge_cv_10d$lambda == bestlam_ridge_10d]
+)
+
+pred_ridge_10d <- predict(ridge_10d, s = bestlam_ridge_10d, newx = x_10d[test_10d, ])
+rmse_ridge_test_10d <- sqrt(mean((pred_ridge_10d - y_test_10d)^2))
+
+bestlam_ridge_10d
+rmse_ridge_cv_10d
+rmse_ridge_test_10d
+
+
+# -------------------------------
+# Modellering Ridge - 7 dage før
+# -------------------------------
+
+x_7d <- model.matrix(tilskuere ~ ., df_7d)[, -1]
+y_7d <- df_7d$tilskuere
+
+train_7d <- sample(1:nrow(x_7d), size = floor(0.8 * nrow(x_7d)))
+test_7d  <- setdiff(1:nrow(x_7d), train_7d)
+y_test_7d <- y_7d[test_7d]
+
+ridge_7d <- glmnet(
+  x_7d[train_7d, ],
+  y_7d[train_7d],
+  alpha = 0,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+ridge_cv_7d <- cv.glmnet(
+  x_7d[train_7d, ],
+  y_7d[train_7d],
+  alpha = 0,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_ridge_7d <- ridge_cv_7d$lambda.min
+
+rmse_ridge_cv_7d <- sqrt(
+  ridge_cv_7d$cvm[ridge_cv_7d$lambda == bestlam_ridge_7d]
+)
+
+pred_ridge_7d <- predict(ridge_7d, s = bestlam_ridge_7d, newx = x_7d[test_7d, ])
+rmse_ridge_test_7d <- sqrt(mean((pred_ridge_7d - y_test_7d)^2))
+
+bestlam_ridge_7d
+rmse_ridge_cv_7d
+rmse_ridge_test_7d
+
+
+# -------------------------------
+# Modellering Rigde - 3 dage før
+# -------------------------------
+
+x_3d <- model.matrix(tilskuere ~ ., df_3d)[, -1]
+y_3d <- df_3d$tilskuere
+
+train_3d <- sample(1:nrow(x_3d), size = floor(0.8 * nrow(x_3d)))
+test_3d  <- setdiff(1:nrow(x_3d), train_3d)
+y_test_3d <- y_3d[test_3d]
+
+ridge_3d <- glmnet(
+  x_3d[train_3d, ],
+  y_3d[train_3d],
+  alpha = 0,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+ridge_cv_3d <- cv.glmnet(
+  x_3d[train_3d, ],
+  y_3d[train_3d],
+  alpha = 0,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_ridge_3d <- ridge_cv_3d$lambda.min
+
+rmse_ridge_cv_3d <- sqrt(
+  ridge_cv_3d$cvm[ridge_cv_3d$lambda == bestlam_ridge_3d]
+)
+
+pred_ridge_3d <- predict(ridge_3d, s = bestlam_ridge_3d, newx = x_3d[test_3d, ])
+rmse_ridge_test_3d <- sqrt(mean((pred_ridge_3d - y_test_3d)^2))
+
+bestlam_ridge_3d
+rmse_ridge_cv_3d
+rmse_ridge_test_3d
+
+# -------------------------------
+# Best Subset Selection
+# -------------------------------
+
+# -------------------------------------------------------
+# Best subset selection (samme metode I har lært)
+# -------------------------------------------------------
+predict.regsubsets <- function(object, newdata, id, ...) {
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id = id)
+  xvars <- names(coefi)
+  mat[, xvars, drop = FALSE] %*% coefi
+}
+
+# -------------------------------------------------------
+# Best Subset: 2 måneder før (df_2m)
+# -------------------------------------------------------
+set.seed(123)
+train <- sample(1:nrow(df_2m), nrow(df_2m) * 2/3)
+test  <- (-train)
+
+vff_train <- df_2m[train, ]
+vff_test  <- df_2m[test, ]
+
+k <- 10
+n <- nrow(vff_train)
+set.seed(1)
+folds <- sample(rep(1:k, length = n))
+
+cv.errors <- matrix(
+  NA, k, dim(vff_train)[2] - 1,
+  dimnames = list(NULL, paste(1:(dim(vff_train)[2] - 1)))
+)
+
+for (j in 1:k) {
+  best.fit <- regsubsets(
+    tilskuere ~ .,
+    data = vff_train[folds != j, ],
+    nvmax = dim(vff_train)[2] - 1,
+    method = "forward"
+  )
+  
+  for (i in 1:(dim(vff_train)[2] - 1)) {
+    pred <- predict(best.fit, vff_train[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean)
+best_size_2m <- which.min(mean.cv.errors)
+
+reg.best <- regsubsets(
+  tilskuere ~ .,
+  data = vff_train,
+  nvmax = dim(vff_train)[2] - 1,
+  method = "forward"
+)
+
+pred_best_subset <- predict(reg.best, vff_test, id = best_size_2m)
+
+mse_best_subset <- mean((vff_test$tilskuere - pred_best_subset)^2)
+rmse_bestsubset_test_2m <- sqrt(mse_best_subset)
+rmse_bestsubset_cv_2m <- sqrt(min(mean.cv.errors))
+
+best_size_2m
+rmse_bestsubset_cv_2m
+rmse_bestsubset_test_2m
+coef(reg.best, best_size_2m)
+
+
+# -------------------------------------------------------
+# Best Subset: 10 dage før (df_10d)
+# -------------------------------------------------------
+set.seed(123)
+train <- sample(1:nrow(df_10d), nrow(df_10d) * 2/3)
+test  <- (-train)
+
+vff_train <- df_10d[train, ]
+vff_test  <- df_10d[test, ]
+
+k <- 10
+n <- nrow(vff_train)
+set.seed(1)
+folds <- sample(rep(1:k, length = n))
+
+cv.errors <- matrix(
+  NA, k, dim(vff_train)[2] - 1,
+  dimnames = list(NULL, paste(1:(dim(vff_train)[2] - 1)))
+)
+
+for (j in 1:k) {
+  best.fit <- regsubsets(
+    tilskuere ~ .,
+    data = vff_train[folds != j, ],
+    nvmax = dim(vff_train)[2] - 1,
+    method = "forward" #Har glemt hvorfor vi har addet den her
+  )
+  for (i in 1:(dim(vff_train)[2] - 1)) {
+    pred <- predict(best.fit, vff_train[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean)
+best_size_10d <- which.min(mean.cv.errors)
+
+reg.best <- regsubsets(
+  tilskuere ~ .,
+  data = vff_train,
+  nvmax = dim(vff_train)[2] - 1,
+  method = "forward"
+)
+
+pred_best_subset <- predict(reg.best, vff_test, id = best_size_10d)
+
+mse_best_subset <- mean((vff_test$tilskuere - pred_best_subset)^2)
+rmse_bestsubset_test_10d <- sqrt(mse_best_subset)
+rmse_bestsubset_cv_10d <- sqrt(min(mean.cv.errors))
+
+best_size_10d
+rmse_bestsubset_cv_10d
+rmse_bestsubset_test_10d
+coef(reg.best, best_size_10d)
+
+
+# -------------------------------------------------------
+# Best Subset: 7 dage før (df_7d)
+# -------------------------------------------------------
+set.seed(123)
+train <- sample(1:nrow(df_7d), nrow(df_7d) * 2/3)
+test  <- (-train)
+
+vff_train <- df_7d[train, ]
+vff_test  <- df_7d[test, ]
+
+k <- 10
+n <- nrow(vff_train)
+set.seed(1)
+folds <- sample(rep(1:k, length = n))
+
+cv.errors <- matrix(
+  NA, k, dim(vff_train)[2] - 1,
+  dimnames = list(NULL, paste(1:(dim(vff_train)[2] - 1)))
+)
+
+for (j in 1:k) {
+  best.fit <- regsubsets(
+    tilskuere ~ .,
+    data = vff_train[folds != j, ],
+    nvmax = dim(vff_train)[2] - 1,
+    method = "forward"
+  )
+  for (i in 1:(dim(vff_train)[2] - 1)) {
+    pred <- predict(best.fit, vff_train[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean)
+best_size_7d <- which.min(mean.cv.errors)
+
+reg.best <- regsubsets(
+  tilskuere ~ .,
+  data = vff_train,
+  nvmax = dim(vff_train)[2] - 1,
+  method = "forward"
+)
+
+pred_best_subset <- predict(reg.best, vff_test, id = best_size_7d)
+
+mse_best_subset <- mean((vff_test$tilskuere - pred_best_subset)^2)
+rmse_bestsubset_test_7d <- sqrt(mse_best_subset)
+rmse_bestsubset_cv_7d <- sqrt(min(mean.cv.errors))
+
+best_size_7d
+rmse_bestsubset_cv_7d
+rmse_bestsubset_test_7d
+coef(reg.best, best_size_7d)
+
+
+# -------------------------------------------------------
+# Best Subset: 3 dage før (df_3d)
+# -------------------------------------------------------
+set.seed(123)
+train <- sample(1:nrow(df_3d), nrow(df_3d) * 2/3)
+test  <- (-train)
+
+vff_train <- df_3d[train, ]
+vff_test  <- df_3d[test, ]
+
+k <- 10
+n <- nrow(vff_train)
+set.seed(1)
+folds <- sample(rep(1:k, length = n))
+
+cv.errors <- matrix(
+  NA, k, dim(vff_train)[2] - 1,
+  dimnames = list(NULL, paste(1:(dim(vff_train)[2] - 1)))
+)
+
+for (j in 1:k) {
+  best.fit <- regsubsets(
+    tilskuere ~ .,
+    data = vff_train[folds != j, ],
+    nvmax = dim(vff_train)[2] - 1,
+    method = "forward"
+  )
+  for (i in 1:(dim(vff_train)[2] - 1)) {
+    pred <- predict(best.fit, vff_train[folds == j, ], id = i)
+    cv.errors[j, i] <- mean((vff_train$tilskuere[folds == j] - pred)^2)
+  }
+}
+
+mean.cv.errors <- apply(cv.errors, 2, mean)
+best_size_3d <- which.min(mean.cv.errors)
+
+reg.best <- regsubsets(
+  tilskuere ~ .,
+  data = vff_train,
+  nvmax = dim(vff_train)[2] - 1,
+  method = "forward"
+)
+
+pred_best_subset <- predict(reg.best, vff_test, id = best_size_3d)
+
+mse_best_subset <- mean((vff_test$tilskuere - pred_best_subset)^2)
+rmse_bestsubset_test_3d <- sqrt(mse_best_subset)
+rmse_bestsubset_cv_3d <- sqrt(min(mean.cv.errors))
+
+best_size_3d
+rmse_bestsubset_cv_3d
+rmse_bestsubset_test_3d
+coef(reg.best, best_size_3d)
+
+#---------------------------
+# Sammenligning af RMSE Test og CV 
+#---------------------------
+
+#RSME TEST 2 måneder
+rmse_bestsubset_test_2m
+rmse_ridge_test_2m
+rmse_lasso_test_2m
+
+
+#RSME Træning 2 måneder
+rmse_ridge_cv_2m
+rmse_bestsubset_cv_2m
+rmse_lasso_cv_2m
+
