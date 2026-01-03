@@ -435,15 +435,247 @@ summary(lm_3d_simple)
 # ---------------------------------
 # Modellering Lasso - 2 Måneder Før
 # ---------------------------------
+library(glmnet)
+set.seed(1)
+
+# samme grid som sidste års eksamen
+grid <- 10^seq(10, -2, length.out = 100)
+
+# X og y
+x_2m <- model.matrix(tilskuere ~ ., df_2m)[, -1]
+y_2m <- df_2m$tilskuere
+
+# train/test split (2/3 - 1/3)
+train_2m <- sample(1:nrow(x_2m), nrow(x_2m) * 2/3)
+test_2m  <- (-train_2m)
+y_test_2m <- y_2m[test_2m]
+
+# fit lasso på træning (alle lambdas i grid)
+lasso_2m <- glmnet(
+  x_2m[train_2m, ],
+  y_2m[train_2m],
+  alpha = 1,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+# cross-validation for at vælge bedste lambda
+lasso_cv_2m <- cv.glmnet(
+  x_2m[train_2m, ],
+  y_2m[train_2m],
+  alpha = 1,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_lasso_2m <- lasso_cv_2m$lambda.min
+
+# CV-RMSE (samme stil som sidste år)
+rmse_lasso_cv_2m <- sqrt(
+  lasso_cv_2m$cvm[lasso_cv_2m$lambda == bestlam_lasso_2m]
+)
+
+# test-RMSE
+pred_lasso_2m <- predict(lasso_2m, s = bestlam_lasso_2m, newx = x_2m[test_2m, ])
+rmse_lasso_test_2m <- sqrt(mean((pred_lasso_2m - y_test_2m)^2))
+
+# print resultater
+bestlam_lasso_2m
+rmse_lasso_cv_2m
+rmse_lasso_test_2m
+
+coef_lasso_2m <- coef(lasso_cv_2m, s = "lambda.min")
+coef_lasso_2m[coef_lasso_2m[,1] != 0, , drop = FALSE]
+#Resultaterne viser, at modstander og historiske tilskuertal er de vigtigste faktorer 2 måneder før kamp.
 
 # -------------------------------
 # Modellering Lasso - 10 dage før
 # -------------------------------
+library(glmnet)
+set.seed(1)
 
-# -------------------------------
+# Lambda-grid (samme som de andre modeller)
+grid <- 10^seq(10, -2, length.out = 100)
+
+# 1) X og y
+x_10d <- model.matrix(tilskuere ~ ., df_10d)[, -1]
+y_10d <- df_10d$tilskuere
+
+# 2) Train / test split (2/3 - 1/3)
+train_10d <- sample(1:nrow(x_10d), nrow(x_10d) * 2/3)
+test_10d  <- (-train_10d)
+y_test_10d <- y_10d[test_10d]
+
+# 3) Fit Lasso (alpha = 1)
+lasso_10d <- glmnet(
+  x_10d[train_10d, ],
+  y_10d[train_10d],
+  alpha  = 1,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+# 4) Cross-validation
+lasso_cv_10d <- cv.glmnet(
+  x_10d[train_10d, ],
+  y_10d[train_10d],
+  alpha  = 1,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_lasso_10d <- lasso_cv_10d$lambda.min
+
+# 5) CV-RMSE
+rmse_lasso_cv_10d <- sqrt(
+  lasso_cv_10d$cvm[lasso_cv_10d$lambda == bestlam_lasso_10d]
+)
+
+# 6) Test-RMSE
+pred_lasso_10d <- predict(
+  lasso_10d,
+  s    = bestlam_lasso_10d,
+  newx = x_10d[test_10d, ]
+)
+
+rmse_lasso_test_10d <- sqrt(mean((pred_lasso_10d - y_test_10d)^2))
+
+# 7) Print resultater
+bestlam_lasso_10d
+rmse_lasso_cv_10d
+rmse_lasso_test_10d
+
+# (Valgfrit) Hvilke variabler vælger Lasso?
+coef_lasso_10d <- coef(lasso_cv_10d, s = "lambda.min")
+coef_lasso_10d[coef_lasso_10d[,1] != 0, , drop = FALSE]
+#10 dage før kamp spiller både modstander og kortsigtede kampvariabler en større rolle for billetsalget.
+
+# -------------------------------------------------------
 # Modellering Lasso - 7 dage før
-# -------------------------------
+# -------------------------------------------------------
 
-# -------------------------------
+library(glmnet)
+set.seed(1)
+
+# Lambda-grid
+grid <- 10^seq(10, -2, length.out = 100)
+
+# 1) X og y
+x_7d <- model.matrix(tilskuere ~ ., df_7d)[, -1]
+y_7d <- df_7d$tilskuere
+
+# 2) Train / test split (2/3 - 1/3)
+train_7d <- sample(1:nrow(x_7d), nrow(x_7d) * 2/3)
+test_7d  <- (-train_7d)
+y_test_7d <- y_7d[test_7d]
+
+# 3) Fit Lasso (alpha = 1)
+lasso_7d <- glmnet(
+  x_7d[train_7d, ],
+  y_7d[train_7d],
+  alpha  = 1,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+# 4) Cross-validation
+lasso_cv_7d <- cv.glmnet(
+  x_7d[train_7d, ],
+  y_7d[train_7d],
+  alpha  = 1,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_lasso_7d <- lasso_cv_7d$lambda.min
+
+# 5) CV-RMSE
+rmse_lasso_cv_7d <- sqrt(
+  lasso_cv_7d$cvm[lasso_cv_7d$lambda == bestlam_lasso_7d]
+)
+
+# 6) Test-RMSE
+pred_lasso_7d <- predict(
+  lasso_7d,
+  s    = bestlam_lasso_7d,
+  newx = x_7d[test_7d, ]
+)
+
+rmse_lasso_test_7d <- sqrt(mean((pred_lasso_7d - y_test_7d)^2))
+
+# 7) Print resultater
+bestlam_lasso_7d
+rmse_lasso_cv_7d
+rmse_lasso_test_7d
+
+# (Valgfrit) Hvilke variabler vælger Lasso?
+coef_lasso_7d <- coef(lasso_cv_7d, s = "lambda.min")
+coef_lasso_7d[coef_lasso_7d[,1] != 0, , drop = FALSE]
+#7 dage før kamp får flere kortsigtede kampvariabler betydning for billetsalget."
+
+# -------------------------------------------------------
 # Modellering Lasso - 3 dage før
-# -------------------------------
+# -------------------------------------------------------
+
+library(glmnet)
+set.seed(1)
+
+# Lambda-grid (samme som de andre modeller)
+grid <- 10^seq(10, -2, length.out = 100)
+
+# 1) X og y
+x_3d <- model.matrix(tilskuere ~ ., df_3d)[, -1]
+y_3d <- df_3d$tilskuere
+
+# 2) Train / test split (2/3 - 1/3)
+train_3d <- sample(1:nrow(x_3d), nrow(x_3d) * 2/3)
+test_3d  <- (-train_3d)
+y_test_3d <- y_3d[test_3d]
+
+# 3) Fit Lasso (alpha = 1)
+lasso_3d <- glmnet(
+  x_3d[train_3d, ],
+  y_3d[train_3d],
+  alpha  = 1,
+  lambda = grid,
+  thresh = 1e-12
+)
+
+# 4) Cross-validation
+lasso_cv_3d <- cv.glmnet(
+  x_3d[train_3d, ],
+  y_3d[train_3d],
+  alpha  = 1,
+  lambda = grid,
+  nfolds = 5,
+  thresh = 1e-12
+)
+
+bestlam_lasso_3d <- lasso_cv_3d$lambda.min
+
+# 5) CV-RMSE
+rmse_lasso_cv_3d <- sqrt(
+  lasso_cv_3d$cvm[lasso_cv_3d$lambda == bestlam_lasso_3d]
+)
+
+# 6) Test-RMSE
+pred_lasso_3d <- predict(
+  lasso_3d,
+  s    = bestlam_lasso_3d,
+  newx = x_3d[test_3d, ]
+)
+
+rmse_lasso_test_3d <- sqrt(mean((pred_lasso_3d - y_test_3d)^2))
+
+# 7) Print resultater
+bestlam_lasso_3d
+rmse_lasso_cv_3d
+rmse_lasso_test_3d
+
+# (Valgfrit) Hvilke variabler vælger Lasso?
+coef_lasso_3d <- coef(lasso_cv_3d, s = "lambda.min")
+coef_lasso_3d[coef_lasso_3d[,1] != 0, , drop = FALSE]
+#3 dage før kamp dominerer kortsigtede faktorer som nyligt billetsalg, ugedag og vejr.
