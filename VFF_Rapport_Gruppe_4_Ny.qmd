@@ -219,8 +219,8 @@ knitr::kable(
 ```
 
 Overordnet ses et klart fald i RMSE for alle modeller, jo tættere
-analysen foretages på kampdagen. Dette indikerer, at information om
-billetsalg tættere på kampafvikling har stor betydning for modellernes
+analysen foretages på kampdagen, hvilket indikere, at information om
+billetsalg har stor betydning for modellernes
 præcision. Den klassiske lineære regressionsmodel samt de regulariserede
 modeller Ridge og Lasso præsterer relativt ens på tværs af tidspunkter.
 Lasso-modellen opnår konsekvent den laveste eller næstlaveste RMSE,
@@ -314,29 +314,24 @@ Tabellen viser best og worstcase-scenarier for det forventede
 tilskuertal til kampen mod FCN lørdag den 1. marts. Scenarierne
 illustrerer forskellen i det forventede fremmøde og kan anvendes som
 beslutningsgrundlag for planlægning af markedsføring og
-ressourceallokering. Resultaterne viser, at Viborg FF kan udarbejde
+ressourceallokering. 
+
+Resultaterne  viser, at Viborg FF kan udarbejde
 brugbare estimater for billetsalget flere dage før kampstart, og at
 prognosernes præcision øges markant, jo tættere man kommer på kampdagen.
-Tidlige estimater kan hjælpe med overordnet planlægning, mens mere
-præcise prognoser tættere på kampafvikling kan anvendes til beslutninger
-i forhold til bemanding og kapacitetsstyring.
 
 # Konklusion
 
-Projektet har haft til formål at undersøge, hvordan Viborg FF kan
-anvende data til at identificere de faktorer, der har størst betydning
-for billetsalget og understøtte mere databaserede beslutninger. Analysen
-viser, at klubben råder over et solidt datagrundlag, som muliggør
-opbygning af statistiske og maskinlæringsbaserede modeller til
-estimering af tilskuertal. Resultaterne dokumenterer, at modellernes
+Formålet med projektet har været at undersøge, hvordan Viborg FF kan anvende data til at identificere de vigtigste faktorer, der påvirker billetsalget, og dermed understøtte mere databaserede beslutningsprocesser. Analysen viser, at klubben råder over et solidt og brugbart datagrundlag, som gør det muligt at opbygge machine learning-modeller til at estimere forventede tilskuertal. Ved at inddrage salgsdatoer som variabel kan modellerne desuden præciseres og give mere nøjagtige prognoser. 
+Resultaterne dokumenterer, at modellernes
 præcision øges markant, jo tættere man kommer på kampdagen, hvilket gør
-det muligt at anvende forskellige prognoser afhængigt af
-beslutningshorisonten.
+det muligt at lave pronogser på, hvor mange tilskuere der vil komme til kampene.
 
 Sammenligningen af modeller viser, at regulariserede modeller som Ridge
 og Lasso håndterer datasættets kompleksitet bedre end den klassiske
-lineære regression og dermed er mere stabile i praksis. De
-organisatoriske analyser indikerer samtidig, at Viborg FF befinder sig
+lineære regression og dermed er mere stabile i praksis. 
+
+De organisatoriske analyser indikerer samtidig, at Viborg FF befinder sig
 på et middel niveau af datamodenhed, hvor data primært anvendes
 operationelt. Samlet set har klubben et solidt fundament for datadrevet
 billetsalg, men et yderligere potentiale kan realiseres gennem
@@ -348,7 +343,7 @@ databrug.
 På baggrund af projektets analyser anbefales det, at Viborg FF i højere
 grad anvender de udviklede datamodeller som et fast
 beslutningsstøtteværktøj i forbindelse med billetsalg og planlægning af
-hjemmekampe. Modellerne 5 kan anvendes forskelligt afhængigt af
+hjemmekampe. Modellerne kan anvendes forskelligt afhængigt af
 tidshorisonten, hvor tidlige estimater understøtter overordnet
 planlægning, mens mere præcise prognoser tættere på kampdagen kan
 anvendes til beslutninger såsom bemanding og indkøb.
