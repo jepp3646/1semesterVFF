@@ -2941,7 +2941,8 @@ con <- dbConnect(
 )
 
 # Sørger for at forbindelsen altid lukkes, selv hvis scriptet fejler undervejs
-on.exit(DBI::dbDisconnect(con), add = TRUE)
+
+#on.exit(DBI::dbDisconnect(con), add = TRUE)
 ```
 
 ### C) Web scraping af Superstats (udkommenteret)
@@ -3175,7 +3176,7 @@ vff_hjemmekampe_med_vejr <- readRDS("vff_hjemmekampe_med_vejr.rds")
 # Skriv (eller overskriv) tabellerne i databasen, så DB altid er opdateret
 dbWriteTable(con, "vffkort01", vffkort01, overwrite = TRUE)
 dbWriteTable(con, "vff_hjemmekampe_med_vejr", vff_hjemmekampe_med_vejr, overwrite = TRUE)
-dbWriteTable(con, "fcidk", fcidk, overwrite = TRUE)
+#dbWriteTable(con, "fcidk", fcidk, overwrite = TRUE)
 ```
 
 ### E) SQL-joins og kontroludtræk
@@ -3300,7 +3301,7 @@ dplyr::glimpse(model_dataset)
 #| message: false
 #| warning: false
 
- Vi rydder op i dato, kolonnenavne, fjern junk + dubletter
+#Vi rydder op i dato, kolonnenavne, fjern junk + dubletter
 # - clean_names() gør fx "VFF_mål" -> "vff_mal"
 # - Vi laver dato om til Date
 # - Vi gør udvalgte tekstfelter til factor (giver mening i modelling)
