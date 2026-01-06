@@ -291,7 +291,20 @@ billetsalg, hvilket giver et anvendeligt beslutningsgrundlag.
 
 ## Fortolkning af modelresultater i praksis
 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
 
+scenario_preds_fcn_2m <- read.csv("tables/scenario_preds_fcn_2m.csv")
+
+knitr::kable(
+scenario_preds_fcn_2m,
+digits = 0,
+caption = "Best- og worst-case estimater for tilskuertal til VFF – FCN (2 måneder før kamp)."
+)
+
+```
 
 Tabellen viser best og worstcase-scenarier for det forventede
 tilskuertal til kampen mod FCN lørdag den 1. marts. Scenarierne

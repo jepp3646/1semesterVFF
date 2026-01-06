@@ -462,8 +462,6 @@ summary(lm_2m_big)
 # Modellering Lineær Regression (STOR MODEL) - 10 dage før
 # -------------------------------------------------------------
 
-# Samme metode som før, bare med datasættet for 10 dage før kamp.
-
 
 # STOR model: bruger alle variabler som vi har i df_10d.
 lm_10d_big <- lm(tilskuere ~ ., data = df_10d[train_10d, ])
@@ -474,8 +472,6 @@ summary(lm_10d_big)
 # Modellering Lineær Regression (STOR MODEL) - 7 dage før
 # -------------------------------------------------------------
 
-# Vi gør det samme for 7 dage før.
-
 # STOR model: alle variabler i df_7d.
 lm_7d_big <- lm(tilskuere ~ ., data = df_7d[train_7d, ])
 summary(lm_7d_big)
@@ -483,8 +479,6 @@ summary(lm_7d_big)
 # -------------------------------------------------------------
 # Modellering Lineær Regression (STOR MODEL) - 3 dage før
 # -------------------------------------------------------------
-
-# Til sidst gør vi det samme for 3 dage før kamp.
 
 # STOR model: alle variabler i df_3d.
 lm_3d_big <- lm(tilskuere ~ ., data = df_3d[train_3d, ])
@@ -1470,66 +1464,6 @@ scenario_preds_2m <- data.frame(
 print(scenario_preds_2m)
 
 
-
-# ---------------------------------------
-# Output-mapper (opret hvis de ikke findes)
-# ---------------------------------------
-# dir.create("figures", showWarnings = FALSE)
-#dir.create("tables", showWarnings = FALSE)
-
-# -----------------------------
-# Plot 1: Test-RMSE (3 dage før)
-# -----------------------------
-#p_rmse_3d <- ggplot(rmse_data_3d, aes(x = Model, y = RMSE, fill = Model)) +
-  #geom_col(color = "black") +
-  #theme_minimal() +
-  #labs(
-    #title = "Test-RMSE for modeller (3 dage før kamp)",
-    #x = "Model",
-    #y = "RMSE (tilskuere)"
-  #) +
-  #theme(legend.position = "none")
-
-#ggsave("figures/rmse_3d.png", plot = p_rmse_3d, width = 7, height = 4, dpi = 300)
-
-# ------------------------------------------
-# Plot 2: Test-RMSE som funktion af tid før kamp
-# ------------------------------------------
-#p_rmse_time <- ggplot(rmse_over_time_long, aes(x = Tid, y = RMSE, group = Model, color = Model)) +
- # geom_line(linewidth = 1) +
-  #geom_point(size = 2) +
-  #theme_minimal() +
-  #labs(
-   # title = "Test-RMSE som funktion af tid før kamp",
-  #  x = "Tid før kamp",
-   # y = "RMSE (tilskuere)"
-  #)
-
-#ggsave("figures/rmse_over_time.png", plot = p_rmse_time, width = 7, height = 4, dpi = 300)
-
-# -----------------------------
-# Tabeller (CSV)
-# -----------------------------
-#rmse_test_table <- data.frame(
- # Tid = c("2 måneder", "10 dage", "7 dage", "3 dage"),
-  #LM = c(rmse_lm_test_2m, rmse_lm_test_10d, rmse_lm_test_7d, rmse_lm_test_3d),
-  #Ridge = c(rmse_ridge_test_2m, rmse_ridge_test_10d, rmse_ridge_test_7d, rmse_ridge_test_3d),
-  #Lasso = c(rmse_lasso_test_2m, rmse_lasso_test_10d, rmse_lasso_test_7d, rmse_lasso_test_3d),
-  #BestSubset = c(rmse_bestsubset_test_2m, rmse_bestsubset_test_10d, rmse_bestsubset_test_7d, rmse_bestsubset_test_3d)
-#)
-#write.csv(rmse_test_table, "tables/rmse_test_table.csv", row.names = FALSE)
-
-#3rmse_cv_table <- data.frame(
-  #Tid = c("2 måneder", "10 dage", "7 dage", "3 dage"),
-  #Ridge = c(rmse_ridge_cv_2m, rmse_ridge_cv_10d, rmse_ridge_cv_7d, rmse_ridge_cv_3d),
-  #Lasso = c(rmse_lasso_cv_2m, rmse_lasso_cv_10d, rmse_lasso_cv_7d, rmse_lasso_cv_3d),
-  #BestSubset = c(rmse_bestsubset_cv_2m, rmse_bestsubset_cv_10d, rmse_bestsubset_cv_7d, rmse_bestsubset_cv_3d)
-#)
-#write.csv(rmse_cv_table, "tables/rmse_cv_table.csv", row.names = FALSE)
-
-#write.csv(scenario_preds_2m, "tables/scenario_preds_2m.csv", row.names = FALSE)
-
-
 ## ============================================================
 ## Prediction (2m) – Viborg vs FCN, 1/3 kl. 17 (lørdag)
 ## Best/Worst case ved at variere historiske gennemsnit
@@ -1589,6 +1523,13 @@ scenario_preds_fcn_2m <- data.frame(
   scenario = c("Best-case (2m)", "Worst-case (2m)"),
   predicted_tilskuere = c(pred_best, pred_worst)
 )
+
+write.csv(
+  scenario_preds_fcn_2m,
+  "tables/scenario_preds_fcn_2m.csv",
+  row.names = FALSE
+)
+
 
 print(scenario_preds_fcn_2m)
 

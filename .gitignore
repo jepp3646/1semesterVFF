@@ -1,5 +1,22 @@
-.Rproj.user
+# macOS
+.DS_Store
+
+# Data exports
+*.csv
+*_ascii.csv
+
+# SQLite (undtagen hvis I vil beholde én)
+*.db
+*.sqlite
+*.db-journal
+!VffDataBaseNew.db
+
+# R artifacts
 .Rhistory
 .RData
-.Ruserdata
-KLAR KODE TIL GITHUB.R
+.Rproj.user/
+
+# Quarto
+.quarto/
+*_cache/
+*_files/
