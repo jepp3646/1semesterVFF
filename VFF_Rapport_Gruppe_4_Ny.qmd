@@ -286,11 +286,9 @@ knitr::kable(
 ```
 
 \
-Lasso-modellen viser, at salgsdata tæt på kampdagen har størst betydning
+Lasso-modellen viser, at billetsalg tæt på kampdagen har størst betydning
 for forudsigelsen af tilskuertallet, mens historiske gennemsnit og
-vejrforhold bidrager i begrænset omfang. Modellen reducerer
-kompleksiteten og identificerer de mest centrale faktorer for
-billetsalg, hvilket giver et anvendeligt beslutningsgrundlag.
+vejrforhold bidrager i begrænset omfang. Modellen gør det nemmere at forstå, hvad der har størst betydning for billetsalget, og giver et godt grundlag for at træffe beslutninger.
 
 ## Fortolkning af modelresultater i praksis
 
@@ -322,7 +320,7 @@ prognosernes præcision øges markant, jo tættere man kommer på kampdagen.
 
 # Konklusion
 
-Formålet med projektet har været at undersøge, hvordan Viborg FF kan anvende data til at identificere de vigtigste faktorer, der påvirker billetsalget, og dermed understøtte mere databaserede beslutningsprocesser. Analysen viser, at klubben råder over et solidt og brugbart datagrundlag, som gør det muligt at opbygge machine learning-modeller til at estimere forventede tilskuertal. Ved at inddrage salgsdatoer som variabel kan modellerne desuden præciseres og give mere nøjagtige prognoser. 
+Formålet med projektet har været at undersøge, hvordan Viborg FF kan anvende data til at identificere de vigtigste faktorer, der påvirker billetsalget, og dermed understøtte mere databaserede beslutningsprocesser. Analysen viser, at klubben råder over et solidt og brugbart datagrundlag, som gør det muligt at opbygge machine learning-modeller til at estimere forventede tilskuertal. Ved at inddrage data om billetsalg kan modellerne desuden præciseres og give mere nøjagtige prognoser. 
 Resultaterne dokumenterer, at modellernes
 præcision øges markant, jo tættere man kommer på kampdagen, hvilket gør
 det muligt at lave pronogser på, hvor mange tilskuere der vil komme til kampene.
