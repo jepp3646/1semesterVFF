@@ -1,6 +1,4 @@
-# -----------------------------
-# Forbind til SQLite Database
-# -----------------------------
+
 
 # Liste over alle pakker (dokumentation: hvad projektet bruger)
 packages <- c(

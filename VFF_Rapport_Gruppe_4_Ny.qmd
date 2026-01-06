@@ -30,12 +30,17 @@ editor:
     wrap: 72
 ---
 
+
 \pagenumbering{gobble}
 
 \clearpage
 
 \setcounter{page}{3}
 \pagenumbering{arabic}
+
+\vspace{0.5em}
+\noindent\textbf{Kode og repository:} \url{https://github.com/jepp3646/1semesterVFF}
+
 
 # Indledning
 
@@ -170,6 +175,8 @@ databrug. Viborg FF’s datamodenhed vurderes samlet set som middel.
 
 # Vurdering af modeller
 
+Modeludvikling og evaluering følger CRISP-DM-faserne ‘Modeling’ og ‘Evaluation’, hvor modellerne sammenlignes på test-RMSE på tværs af tidshorisonter.
+
 ## Indledende dataanalyse
 
 Data er indsamlet, renset og joinet til et samlet datasæt via SQL
@@ -223,12 +230,8 @@ model i denne fase.
 ![Test-RMSE for modeller 3 dage før kamp (Egen
 tilvirkning)](figures/rmse_3d.png){width="438"}
 
-Figuren viser test-RMSE tre dage før kamp. Lasso opnår den laveste fejl,
-mens LM og Ridge præsterer på et tilsvarende niveau. Best Subset
-Selection har markant højere RMSE, hvilket indikerer svag generalisering
-og gør modellen uegnet til prædiktion i denne fase. Best Subset
-Selection adskiller sig markant ved at have væsentligt højere
-RMSE-værdier på tværs af alle tidspunkter.
+Figuren viser test-RMSE tre dage før kamp. Lasso-modellen opnår den laveste test-RMSE og udviser den højeste prædiktionsevne i denne fase. LM og Ridge præsterer på et tilsvarende niveau. Best Subset
+Selection har markant højere RMSE, hvilket indikerer svag generalisering, hvilket kan være tegn på overfitting.
 
 ## Variabeludvælgelse (Lasso)
 
@@ -305,6 +308,7 @@ caption = "Best- og worst-case estimater for tilskuertal til VFF – FCN (2 mån
 )
 
 ```
+
 
 Tabellen viser best og worstcase-scenarier for det forventede
 tilskuertal til kampen mod FCN lørdag den 1. marts. Scenarierne
@@ -2899,6 +2903,11 @@ transskribere filer på op til 10 timer.
 ### A) Pakker og opsætning
 
 ```{r}
+#| label: pakker
+#| echo: true
+#| eval: false
+#| message: false
+#| warning: false
 # -----------------------------
 # Forbind til SQLite Database
 # -----------------------------
@@ -3666,7 +3675,7 @@ rmse_lm_overview
 #| message: false
 #| warning: false
 
- ==================================
+#==================================
 # Modellering Lasso 
 # ==================================
 library(glmnet)
@@ -4505,6 +4514,8 @@ ggplot(rmse_over_time_long, aes(x = Tid, y = RMSE, group = Model, color = Model)
 
 
 ### Q) Best-Worst case (2m) 
+
+
 
 ```{r}
 #| label: bilag-best-worst-case-2m
