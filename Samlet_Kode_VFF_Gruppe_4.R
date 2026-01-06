@@ -4,10 +4,8 @@
 
 # Liste over alle pakker (dokumentation: hvad projektet bruger)
 packages <- c(
-  "tidyverse", "palmerpenguins", "ggthemes", "ggridges", "nycflights13",
-  "Lahman", "janitor", "vroom", "arrow", "readxl", "writexl", "googlesheets4",
-  "RSQLite", "babynames", "stringi", "hms", "tidymodels", "fable", "car", "MASS",
-  "lmtest", "tseries", "ggfortify", "polite", "tufte", "rvest", "xml2",
+  "tidyverse", "janitor",
+  "RSQLite", "rvest", "xml2",
   "dplyr", "stringr", "DBI", "lubridate","leaps"
 )
 
@@ -34,18 +32,129 @@ con <- dbConnect(
 on.exit(DBI::dbDisconnect(con), add = TRUE)
 
 
+# ----------------------------------------------------
+# WEB SCRAPING AF SUPERSTATS OG JOIN AF ANDRE TABELLER
+# ----------------------------------------------------
+#
+# # Vi har udkommenteret det, så den ikke scraber hver gang der loades.
+#
+# # Vi angiver URL til Superstats (bruges kun som udgangspunkt)
+# html <- "https://superstats.dk/hold/sason?id=11&vis=hjemme&aar=2025%2F2026"
+#
+# # Vector med alle sæsoner vi vil hente data for (Efter nyt stadium)
+# seasons <- c(
+#   "2025/2026","2024/2025","2023/2024","2022/2023","2022/2022",
+#   "2016/2017","2015/2016","2013/2014","2007/2008","2006/2007",
+#   "2005/2006","2004/2005","2003/2004","2002/2003","2001/2002",
+#   "2000/2001","1999/2000","1998/1999","1996/1997","1995/1996",
+#   "1993/1994"
+# )
+#
+# # Tomt dataframe som data fra alle sæsoner løbende samles i
+# st_webscrabe <- data.frame()
+#
+# # Loop der gennemgår hver sæson én ad gangen
+# for (s in seasons) {
+#
+#   # Bygger korrekt URL for den pågældende sæson
+#   url <- paste0(
+#     "https://superstats.dk/hold/sason?id=11&vis=hjemme&aar=",
+#     URLencode(s, reserved = TRUE)
+#   )
+#
+#   # Henter HTML-indholdet fra siden
+#   webpage <- read_html(url)
+#
+#   # Finder alle tabeller på siden
+#   tables <- html_nodes(webpage, "table")
+#
+#   # Tabel nr. 3 er den med kampdata
+#   st3_season <- html_table(tables[[3]], fill = TRUE, convert = FALSE)
+#
+#   # Tilføjer sæson som variabel
+#   st3_season$Season <- s
+#
+#   # Lægger sæsonens data oven i det samlede dataframe
+#   st_webscrabe <- bind_rows(st_webscrabe, st3_season)
+# }
+#
+# # -----------------------------
+# # DATARENS
+# # -----------------------------
+#
+# st_webscrabe <- st_webscrabe %>%
+#   mutate(
+#     # Tilskuere omdannes fra tekst til numerisk værdi
+#     Tilskuere = as.character(Tilskuere),
+#     Tilskuere = str_trim(Tilskuere),
+#     Tilskuere = na_if(Tilskuere, "-"),
+#     Tilskuere = na_if(Tilskuere, ""),
+#     Tilskuere = str_replace_all(Tilskuere, "\\.", ""), # fjerner tusindtals-punktum
+#     Tilskuere = str_replace_all(Tilskuere, ",", ""),
+#     Tilskuere = as.numeric(Tilskuere),
+#
+#     # Udtrækker modstanderhold fra kamp-teksten ("VFF - FCK" → "FCK")
+#     Modstander = str_replace(Kamp, "VFF - ", ""),
+#
+#     # Konverterer dato fra tekst til Date-klasse
+#     Dato = as.Date(Dato, format = "%d.%m.%Y")
+#   )
+#
+# # -----------------------------
+# # MODSTANDER-KATEGORIER
+# # -----------------------------
+#
+# modstander_niveau <- st_webscrabe %>%
+#   group_by(Modstander) %>%
+#   summarise(mean_tilskuere = mean(Tilskuere, na.rm = TRUE), .groups = "drop")
+#
+# qs <- quantile(modstander_niveau$mean_tilskuere,
+#                probs = c(0.25, 0.5, 0.75),
+#                na.rm = TRUE)
+#
+# modstander_niveau <- modstander_niveau %>%
+#   mutate(
+#     kategori = case_when(
+#       mean_tilskuere > qs[3] ~ "A",
+#       mean_tilskuere > qs[2] ~ "B",
+#       mean_tilskuere > qs[1] ~ "C",
+#       TRUE                  ~ "D"
+#     )
+#   )
+#
+# st_webscrabe <- st_webscrabe %>%
+#   left_join(modstander_niveau, by = "Modstander")
+#
+# st_webscrabe <- st_webscrabe %>%
+#   group_by(Season) %>%
+#   mutate(mean_tilskuere_sæson = mean(Tilskuere, na.rm = TRUE)) %>%
+#   ungroup()
+#
+# st_webscrabe_db <- st_webscrabe %>%
+#   mutate(Dato = as.integer(Dato))
+#
+# DBI::dbWriteTable(con, "st_webscrabe", st_webscrabe_db, overwrite = TRUE)
+#
+# # -----------------------------
+# # Load data ind i R -
+# # -----------------------------
+
+
+
 # -----------------------------
-# Load data ind i R
+# Load data ind i R - 
 # -----------------------------
 
+
+
 # Load vores tabeller ind (fra .rds-filer)
-st_webscrabe <- readRDS("st_webscrabe.rds")
 vffkort01 <- readRDS("vffkort01.rds")
 fcidk <- readRDS("fcidk.rds")
+
+#Her loader vi df med dmi,nager og webscrabe fra superstats
 vff_hjemmekampe_med_vejr <- readRDS("vff_hjemmekampe_med_vejr.rds")
 
 # Skriv (eller overskriv) tabellerne i databasen, så DB altid er opdateret
-dbWriteTable(con, "st_webscrabe", st_webscrabe, overwrite = TRUE)
 dbWriteTable(con, "vffkort01", vffkort01, overwrite = TRUE)
 dbWriteTable(con, "vff_hjemmekampe_med_vejr", vff_hjemmekampe_med_vejr, overwrite = TRUE)
 dbWriteTable(con, "fcidk", fcidk, overwrite = TRUE)
@@ -68,7 +177,7 @@ INNER JOIN vff_hjemmekampe_med_vejr d
 ORDER BY s.Dato DESC;
 ")
 
-# (Debug / sanity checks) – viser et par datoer i hver tabel
+# Hurtig kontrol tjek at datoformater matcher i de to tabeller før join
 DBI::dbGetQuery(con, "SELECT Dato FROM st_webscrabe ORDER BY Dato DESC LIMIT 10;")
 DBI::dbGetQuery(con, "SELECT dato_index FROM vff_hjemmekampe_med_vejr ORDER BY dato_index DESC LIMIT 10;")
 
@@ -115,7 +224,7 @@ LEFT JOIN vffkort01
 # Byg samlet model-datasæt i databasen
 # -----------------------------
 
-# Nu vil vi lave en stor tabel, hvor vi joiner st_webscrabe med vffkort01, fcidk og vores DMI tabel
+# Nu vil vi lave en stor tabel, hvor vi joiner st_webscrabe med vffkort01, fcidk og vores DMI/Nager tabel
 # Vi dropper den først, så vi altid starter fra en "ren" tabel
 DBI::dbExecute(con, "DROP TABLE IF EXISTS model_dataset;")
 
@@ -136,24 +245,9 @@ LEFT JOIN vff_hjemmekampe_med_vejr AS d
   ON strftime('%d/%m/%Y', date('1970-01-01', printf('+%d days', s.Dato))) = d.dato_index;
 ")
 
-# Kontrol: findes tabellen nu?
-DBI::dbListTables(con)
-
 # Læs tabellen ind i R og kig på den
 model_dataset <- DBI::dbReadTable(con, "model_dataset")
 names(model_dataset)
-
-# Kontrol: hvilke felter findes i vejr-tabellen (hvis du vil tjekke at de er med i join)
-DBI::dbListFields(con, "vff_hjemmekampe_med_vejr")
-
-
-# -----------------------------
-# Next Step:
-# Download joinet datasæt, formatér behørigt, og gør data klar til preprocessing
-# -----------------------------
-
-# Eksporter model_dataset til R (hvis du kører scriptet i bidder, er det rart at læse den igen)
-model_dataset <- DBI::dbReadTable(con, "model_dataset")
 
 # Vi bruger glimpse fra dplyr pakken, da den giver et glimrende overblik over rækker og kolonner
 dplyr::glimpse(model_dataset)
@@ -178,22 +272,6 @@ df <- model_dataset %>%
 na_frac <- sapply(df, function(x) mean(is.na(x)))
 df <- df[, na_frac < 0.95]   # behold kun kolonner med <95% NA
 
-# Vi sørger for at res er ensartet og udtrækker mål (hvis res findes)
-# Eksempel: "3 - 1" eller "3-1" -> "3-1" og så to nye numeric kolonner
-if ("res" %in% names(df)) {
-  df <- df %>%
-    mutate(
-      res = str_replace_all(res, "\\s+", ""),  # "3 - 1" -> "3-1"
-      vff_maal_from_res = as.integer(str_extract(res, "^[0-9]+")),
-      modstander_maal_from_res = as.integer(str_extract(res, "(?<=-)[0-9]+"))
-    )
-}
-
-# Fjern ubrugelig x7-kolonne (tom/junk fra webscrape)
-# Vi gør det robust: slet den kun hvis den findes
-if ("x7" %in% names(df)) {
-  df <- df %>% select(-x7)
-}
 
 # Overblik efter oprydning
 dplyr::glimpse(df)
@@ -213,9 +291,6 @@ df <- df %>%
     
     # Måneden (sæson-effekt)
     month = month(dato),
-    
-    # Mål-forskel (kampens sportslige betydning)
-    maal_diff = vff_mal - modstander_mal
   )
 
 #Nu laver vi fire forskellige splits, da vi skal lave modeller for hhv. 3d,7d,10d og 2 måneder
@@ -920,9 +995,8 @@ predict.regsubsets <- function(object, newdata, id, ...) {
   coefi <- coef(object, id = id)
   xvars <- names(coefi)
   
-  # FIX: Hvis et fold/test-sæt ikke indeholder alle factor-levels,
-  # kan model.matrix mangle nogle dummy-kolonner. Så crasher mat[, xvars].
-  # Derfor tilføjer vi manglende kolonner som 0, så dimensionerne passer.
+  # Håndtering af manglende factor-levels: hvis en dummy-kolonne mangler i newdata,
+  # tilføjer vi den som 0, så dimensionerne matcher modellen
   missing_vars <- setdiff(xvars, colnames(mat))
   if (length(missing_vars) > 0) {
     missing_mat <- matrix(0, nrow = nrow(mat), ncol = length(missing_vars))
@@ -1454,3 +1528,67 @@ print(scenario_preds_2m)
 #write.csv(rmse_cv_table, "tables/rmse_cv_table.csv", row.names = FALSE)
 
 #write.csv(scenario_preds_2m, "tables/scenario_preds_2m.csv", row.names = FALSE)
+
+
+## ============================================================
+## Prediction (2m) – Viborg vs FCN, 1/3 kl. 17 (lørdag)
+## Best/Worst case ved at variere historiske gennemsnit
+## ============================================================
+
+# Sikrer samme factor-levels som i df_2m
+as_level <- function(value, ref_factor) {
+  factor(value, levels = levels(ref_factor))
+}
+
+# Faste kamp-info (kendte variabler)
+season_latest    <- levels(df_2m$season)[length(levels(df_2m$season))]
+modstander_fixed <- "FCN"
+weekday_fixed    <- "Sat"   # 1/3 er lørdag
+
+# Vi kender FCN-kategorien i vores inddeling (B)
+kategori_fcn <- as_level("B", df_2m$kategori)
+
+# Best/Worst antagelser: variation i historiske gennemsnit (10% og 90% percentil)
+best_mean  <- quantile(df_2m$mean_tilskuere, 0.90, na.rm = TRUE)
+worst_mean <- quantile(df_2m$mean_tilskuere, 0.10, na.rm = TRUE)
+
+best_mean_season  <- quantile(df_2m$mean_tilskuere_saeson, 0.90, na.rm = TRUE)
+worst_mean_season <- quantile(df_2m$mean_tilskuere_saeson, 0.10, na.rm = TRUE)
+
+# Best-case (FCN, lørdag)
+new_best_fcn_2m <- data.frame(
+  season = as_level(season_latest, df_2m$season),
+  modstander = as_level(modstander_fixed, df_2m$modstander),
+  kategori = kategori_fcn,
+  mean_tilskuere = best_mean,
+  mean_tilskuere_saeson = best_mean_season,
+  weekday = as_level(weekday_fixed, df_2m$weekday),
+  is_holiday = FALSE
+)
+
+#  Worst-case (FCN, lørdag)
+new_worst_fcn_2m <- data.frame(
+  season = as_level(season_latest, df_2m$season),
+  modstander = as_level(modstander_fixed, df_2m$modstander),
+  kategori = kategori_fcn,
+  mean_tilskuere = worst_mean,
+  mean_tilskuere_saeson = worst_mean_season,
+  weekday = as_level(weekday_fixed, df_2m$weekday),
+  is_holiday = FALSE
+)
+
+# glmnet (i det her tilfælde bruger vi ridge)  kræver model.matrix (intercept er fjernete)
+x_best  <- model.matrix(~ ., new_best_fcn_2m)[, -1]
+x_worst <- model.matrix(~ ., new_worst_fcn_2m)[, -1]
+
+pred_best  <- as.numeric(predict(ridge_2m, s = bestlam_ridge_2m, newx = x_best))
+pred_worst <- as.numeric(predict(ridge_2m, s = bestlam_ridge_2m, newx = x_worst))
+
+scenario_preds_fcn_2m <- data.frame(
+  kamp = "Viborg vs FCN (1/3 kl. 17)",
+  scenario = c("Best-case (2m)", "Worst-case (2m)"),
+  predicted_tilskuere = c(pred_best, pred_worst)
+)
+
+print(scenario_preds_fcn_2m)
+
